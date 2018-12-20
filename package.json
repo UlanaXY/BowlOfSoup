@@ -1,0 +1,21 @@
+{
+  "name": "soup.io-downloader-fixed",
+  "version": "0.0.1",
+  "author": "ulanaXY",
+  "description": "a simple web server that lints json strings",
+  "license": "A node.js programm to download all your images from your Soup.IO RSS feed to a local harddrive. Optionally you can also save some metadata in a textfile for each image (like the original source of the image).",
+  "engines": {
+    "node": ">=0.10"
+  },
+  "scripts": {
+    "start": "node ./soupdownloader.js"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "axios": "^0.18.0",
+    "cheerio": "^1.0.0-rc.2",
+    "fs": "0.0.1-security",
+    "http": "0.0.0",
+    "lazy": "^1.0.11"
+  }
+}
