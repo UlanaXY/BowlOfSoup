@@ -10,7 +10,8 @@ const path = require('path');
 
 // config
 
-const login = 'ulanaxy';
+// const login = 'ulanaxy';
+const login = 'stanikus';
 let urlListFilePath = null;
 const soupUrl = `http://${login}.soup.io`;
 // const urlsListDirectory = './urlsListDirectory';
@@ -49,23 +50,19 @@ function writeUrlListFile() {
 
 }
 
-function downloadFile (task) {
+async function downloadFile (task, callback) {
     const filePath = path.resolve(mediaDirectory, path.basename(task.url));
 
-        // axios image download with response type "stream"
-        axios({
-            method: 'GET',
-            url: task.url,
-            responseType: 'stream'
-        })
-            .then(response => {
-                // pipe the result stream into a file on disc
-                response.data.pipe(fs.createWriteStream(filePath));
-            })
-            .catch(error => {
-                console.error('Error while downloading file');
-                console.error(error);
-            });
+    // axios image download with response type "stream"
+    const response = await axios({
+        method: 'GET',
+        url: task.url,
+        responseType: 'stream'
+    });
+
+    // console.log(filePath.toString());
+    // pipe the result stream into a file on disc
+    response.data.pipe(fs.createWriteStream(filePath));
 }
 
 
