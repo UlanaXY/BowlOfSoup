@@ -49,23 +49,23 @@ function writeUrlListFile() {
 
 }
 
-async function downloadFile (task) {
-    try {
+function downloadFile (task) {
+    const filePath = path.resolve(mediaDirectory, path.basename(task.url));
+
         // axios image download with response type "stream"
-        const response = await axios.get({
+        axios({
+            method: 'GET',
             url: task.url,
             responseType: 'stream'
-        });
-
-        const filePath = path.resolve(mediaDirectory, path.basename(task.url));
-
-        // console.log(filePath.toString());
-        // pipe the result stream into a file on disc
-        response.data.pipe(fs.createWriteStream(filePath));
-    } catch (e) {
-        throw Error(e);
-    }
-
+        })
+            .then(response => {
+                // pipe the result stream into a file on disc
+                response.data.pipe(fs.createWriteStream(filePath));
+            })
+            .catch(error => {
+                console.error('Error while downloading file');
+                console.error(error);
+            });
 }
 
 
