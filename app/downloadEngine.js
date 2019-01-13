@@ -3,25 +3,27 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const async = require('async');
 const path = require('path');
+// const { app, BrowserWindow, ipcMain } = require('electron');
+const { BrowserWindow } = require('electron');
+const { download } = require('electron-dl');
 // last page http://stanikus.soup.io/since/258895020
 // after last page http://stanikus.soup.io/since/258894239?
 
 // config
 
-// const login = 'ulanaxy';
-const login = 'stanikus';
-let urlListFilePath = null;
-const soupUrl = `http://${login}.soup.io`;
-// const urlsListDirectory = './urlsListDirectory';
+let soupUrl; // string
+let mediaDirectory; // string
+
 const urlsListDirectory = path.resolve(__dirname, 'urlCollections');
-const mediaDirectory = path.resolve(__dirname, 'downloadedMedia');
-const parallelDownloads = 10;
+const urlListFilePath = path.resolve(
+  urlsListDirectory,
+  `urlList-${Date.now()}`
+);
 
 // starting variables
 let pageCounter = 1;
 const allMedia = [];
-const q = async.queue(downloadFile, parallelDownloads);
-setUpWorkingDirectoryStructure();
+let q;
 
 function setUpWorkingDirectoryStructure() {
   // console.log('saving file with all urls...');
@@ -34,8 +36,6 @@ function setUpWorkingDirectoryStructure() {
     console.log(`Creating Directory: ${mediaDirectory}`);
     fs.mkdirSync(mediaDirectory);
   }
-
-  urlListFilePath = path.resolve(urlsListDirectory, `urlList-${Date.now()}`);
 }
 
 function writeUrlListFile() {
@@ -43,19 +43,28 @@ function writeUrlListFile() {
   console.log('file saved');
 }
 
+// async function downloadFile(task) {
+//   const filePath = path.resolve(mediaDirectory, path.basename(task.url));
+//
+//   // axios image download with response type "stream"
+//   const response = await axios({
+//     method: 'GET',
+//     url: task.url,
+//     responseType: 'stream'
+//   });
+//
+//   // console.log(filePath.toString());
+//   // pipe the result stream into a file on disc
+//   response.data.pipe(fs.createWriteStream(filePath));
+// }
+
 async function downloadFile(task) {
-  const filePath = path.resolve(mediaDirectory, path.basename(task.url));
-
-  // axios image download with response type "stream"
-  const response = await axios({
-    method: 'GET',
-    url: task.url,
-    responseType: 'stream'
-  });
-
-  // console.log(filePath.toString());
-  // pipe the result stream into a file on disc
-  response.data.pipe(fs.createWriteStream(filePath));
+  // todo
+  download(BrowserWindow.getFocusedWindow(), task.url, {
+    directory: mediaDirectory
+  })
+    .then(dl => console.log(dl.getSavePath()))
+    .catch(console.error);
 }
 
 function proceedElement(elem) {
@@ -99,9 +108,18 @@ async function fetchUntilEnd(url) {
   }
 }
 
-function main() {
+export default function startDownloadingContent(
+  username,
+  parallelDownloads,
+  chosenMediaDirectory,
+  callback
+) {
+  soupUrl = `http://${username}.soup.io`;
+  mediaDirectory = chosenMediaDirectory;
+  q = async.queue(downloadFile, parallelDownloads);
+  q.drain(callback);
+
+  setUpWorkingDirectoryStructure();
   console.log('Fetching home page, page 1');
   fetchUntilEnd(soupUrl);
 }
-
-main();

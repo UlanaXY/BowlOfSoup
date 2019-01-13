@@ -93,9 +93,12 @@ app.on('ready', async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
-
+  if (process.env.NODE_ENV === 'development') {
+    const menuBuilder = new MenuBuilder(mainWindow);
+    menuBuilder.buildMenu();
+  } else {
+    mainWindow.setMenu(null);
+  }
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();
