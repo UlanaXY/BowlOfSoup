@@ -3,14 +3,13 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const async = require('async');
 const path = require('path');
-// const { app, BrowserWindow, ipcMain } = require('electron');
 const { BrowserWindow } = require('electron');
 const { download } = require('electron-dl');
+
 // last page http://stanikus.soup.io/since/258895020
 // after last page http://stanikus.soup.io/since/258894239?
 
 // config
-
 let soupUrl; // string
 let mediaDirectory; // string
 
@@ -59,11 +58,11 @@ function writeUrlListFile() {
 // }
 
 async function downloadFile(task) {
-  // todo
   download(BrowserWindow.getFocusedWindow(), task.url, {
+    saveAs: false,
     directory: mediaDirectory
   })
-    .then(dl => console.log(dl.getSavePath()))
+    // .then(dl => console.log(dl.getSavePath()))
     .catch(console.error);
 }
 
@@ -77,49 +76,60 @@ function proceedElement(elem) {
 }
 
 async function fetchUntilEnd(url) {
-  const respond = await axios.get(url);
-  // const respond = await axios.get('http://stanikus.soup.io/since/258894239');
+  try {
+    const respond = await axios.get(url, { timeout: 3 * 60 * 1000 });
+    // const respond = await axios.get('http://stanikus.soup.io/since/258894239');
 
-  // console.log(respond);
-  // todo what if respond isn't ok
-  if (respond.statusText !== 'OK') {
-    console.error(`Not OK server respond, status: ${respond.status}`);
-    throw Error(`Not OK server respond, status: ${respond.status}`);
-  }
-  const $ = cheerio.load(respond.data);
+    // todo what if respond isn't ok
+    if (respond.statusText !== 'OK') {
+      console.error(`Not OK server respond, status: ${respond.status}`);
+      throw Error(`Not OK server respond, status: ${respond.status}`);
+    }
+    const $ = cheerio.load(respond.data);
 
-  $('.imagecontainer img').each((i, elem) => proceedElement(elem));
-  $('video').each((i, elem) => proceedElement(elem));
+    $('.imagecontainer img').each((i, elem) => proceedElement(elem));
+    $('video').each((i, elem) => proceedElement(elem));
 
-  const end = $('#new-future').children().length > 0;
+    const end = $('#new-future').children().length > 0;
 
-  if (end) {
-    console.log(`end of soup, this page is last: ${pageCounter}`);
-    writeUrlListFile();
-  } else {
-    const newUrl = $('#load_more strong a')
-      .prop('href')
-      .split('?')[0];
+    if (end) {
+      console.log(`end of soup, this page is last: ${pageCounter}`);
+      writeUrlListFile();
+    } else {
+      const newUrl = $('#load_more strong a')
+        .prop('href')
+        .split('?')[0];
 
-    pageCounter += 1;
-    console.log(`fetching page ${pageCounter}: ${soupUrl + newUrl}`);
-    // console.log(soupUrl + newUrl);
-    fetchUntilEnd(soupUrl + newUrl);
+      pageCounter += 1;
+      console.log(`fetching page ${pageCounter}: ${soupUrl + newUrl}`);
+      // console.log(soupUrl + newUrl);
+      fetchUntilEnd(soupUrl + newUrl);
+    }
+  } catch (e) {
+    if (e.code === 'ETIMEDOUT') {
+      throw Error(`Timeout fetching ${url}`);
+    }
+    throw e;
   }
 }
 
 export default function startDownloadingContent(
   username,
+  downloadDirectory,
   parallelDownloads,
-  chosenMediaDirectory,
   callback
 ) {
   soupUrl = `http://${username}.soup.io`;
-  mediaDirectory = chosenMediaDirectory;
+  mediaDirectory = downloadDirectory;
   q = async.queue(downloadFile, parallelDownloads);
   q.drain(callback);
 
   setUpWorkingDirectoryStructure();
   console.log('Fetching home page, page 1');
-  fetchUntilEnd(soupUrl);
+  fetchUntilEnd(soupUrl)
+    // .then()
+    .catch(error => {
+      console.error(error);
+      callback();
+    });
 }

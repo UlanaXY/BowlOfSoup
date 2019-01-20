@@ -10,10 +10,11 @@
  *
  * @flow
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
+import startDownloadingContent from './downloadEngine';
 
 export default class AppUpdater {
   constructor() {
@@ -102,4 +103,13 @@ app.on('ready', async () => {
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();
+});
+
+ipcMain.on('start-downloading', (event, arg) => {
+  startDownloadingContent(
+    arg.username,
+    arg.downloadDirectory,
+    arg.parallelDownloads,
+    arg.callback
+  );
 });

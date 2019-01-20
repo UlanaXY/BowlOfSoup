@@ -1,10 +1,9 @@
 // @flow
 import React, { Component } from 'react';
 import path from 'path';
-import { remote } from 'electron';
+import { remote, ipcRenderer } from 'electron';
 import styles from './Home.css';
 import TextInput from './TextInput';
-import startDownloadingContent from '../downloadEngine';
 
 type Props = {};
 
@@ -21,7 +20,7 @@ export default class Home extends Component<Props> {
     username: 'stanikus',
     // username: '',
     numberOfParallelDownloads: 10,
-    mediaDirectory: '',
+    downloadDirectory: '',
     downloadInProgress: false
   };
 
@@ -36,24 +35,32 @@ export default class Home extends Component<Props> {
     });
 
   openFolderSelectionDialog = () => {
-    const mediaDirectory = remote.dialog.showOpenDialog({
+    const downloadDirectory = remote.dialog.showOpenDialog({
       properties: ['openDirectory']
     });
     this.setState({
-      mediaDirectory: path.resolve(mediaDirectory[0], 'BowlOfSoup downloads')
-      // mediaDirectory: mediaDirectory[0]
+      downloadDirectory: path.resolve(
+        downloadDirectory[0],
+        'BowlOfSoup_downloads'
+      )
+      // downloadDirectory: downloadDirectory[0]
     });
   };
 
   onStart = () => {
-    const { username, numberOfParallelDownloads, mediaDirectory } = this.state;
-
-    startDownloadingContent(
+    const {
       username,
       numberOfParallelDownloads,
-      mediaDirectory,
-      () => this.setState({ downloadInProgress: false })
-    );
+      downloadDirectory
+    } = this.state;
+
+    const args = {
+      username,
+      downloadDirectory,
+      parallelDownloads: numberOfParallelDownloads,
+      callback: () => this.setState({ downloadInProgress: false })
+    };
+    ipcRenderer.sendSync('start-downloading', args);
     this.setState({ downloadInProgress: true });
   };
 
@@ -61,7 +68,7 @@ export default class Home extends Component<Props> {
     const {
       username,
       numberOfParallelDownloads,
-      mediaDirectory,
+      downloadDirectory,
       downloadInProgress
     } = this.state;
 
@@ -93,7 +100,7 @@ export default class Home extends Component<Props> {
             <button type="button" onClick={this.openFolderSelectionDialog}>
               Chose Directory
             </button>
-            <span>{mediaDirectory}</span>
+            <span>{downloadDirectory}</span>
           </div>
         </div>
 
@@ -101,7 +108,7 @@ export default class Home extends Component<Props> {
           <button
             type="button"
             onClick={this.onStart}
-            disabled={downloadInProgress || mediaDirectory === ''}
+            disabled={downloadInProgress || downloadDirectory === ''}
           >
             Start
           </button>
