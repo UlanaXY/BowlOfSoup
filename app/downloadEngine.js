@@ -2,7 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const async = require('async');
-const path = require('path');
+// const path = require('path');
 const { BrowserWindow } = require('electron');
 const { download } = require('electron-dl');
 
@@ -13,36 +13,34 @@ const { download } = require('electron-dl');
 let soupUrl; // string
 let mediaDirectory; // string
 
-const urlsListDirectory = path.resolve(__dirname, 'urlCollections');
-const urlListFilePath = path.resolve(
-  urlsListDirectory,
-  `urlList-${Date.now()}`
-);
+// const urlsListDirectory = path.resolve(__dirname, 'urlCollections');
+// const urlListFilePath = path.resolve(
+//   urlsListDirectory,
+//   `urlList-${Date.now()}`
+// );
 
 // starting variables
 let q;
 let pageCounter = 1;
 let allMedia = [];
 let downloadSuccess = 0;
-let downloadFailse = 0;
+let downloadFails = 0;
 
 function setUpWorkingDirectoryStructure() {
-  // console.log('saving file with all urls...');
-  if (!fs.existsSync(urlsListDirectory)) {
-    console.log(`Creating Directory: ${urlsListDirectory}`);
-    fs.mkdirSync(urlsListDirectory);
-  }
-
   if (!fs.existsSync(mediaDirectory)) {
     console.log(`Creating Directory: ${mediaDirectory}`);
     fs.mkdirSync(mediaDirectory);
   }
 }
 
-function writeUrlListFile() {
-  fs.writeFileSync(urlListFilePath, allMedia.join('\n'));
-  console.log('file saved');
-}
+// function writeUrlListFile() {
+// if (!fs.existsSync(urlsListDirectory)) {
+//   console.log(`Creating Directory: ${urlsListDirectory}`);
+//   fs.mkdirSync(urlsListDirectory);
+// }
+//   fs.writeFileSync(urlListFilePath, allMedia.join('\n'));
+//   console.log('file saved');
+// }
 
 async function downloadFile(task) {
   return (
@@ -55,7 +53,7 @@ async function downloadFile(task) {
         downloadSuccess += 1;
       })
       .catch(e => {
-        downloadFailse += 1;
+        downloadFails += 1;
         console.error(e);
       })
   );
@@ -94,7 +92,7 @@ async function fetchUntilEnd(url) {
 
   if (end) {
     console.log(`end of soup, this page is last: ${pageCounter}`);
-    writeUrlListFile();
+    // writeUrlListFile();
   } else {
     const newUrl = $('#load_more strong a')
       .prop('href')
@@ -122,7 +120,7 @@ export default function startDownloadingContent(
   pageCounter = 1;
   allMedia = [];
   downloadSuccess = 0;
-  downloadFailse = 0;
+  downloadFails = 0;
   q = async.queue(downloadFile, parallelDownloads);
   q.error((e, task) => {
     console.error('error in taks', task);
@@ -134,10 +132,10 @@ export default function startDownloadingContent(
   fetchUntilEnd(soupUrl, finishCallback)
     // eslint-disable-next-line promise/always-return
     .then(() => {
-      finishCallback(downloadSuccess, downloadFailse);
+      finishCallback(downloadSuccess, downloadFails);
     })
     .catch(error => {
       console.error(error);
-      finishCallback(downloadSuccess, downloadFailse);
+      finishCallback(downloadSuccess, downloadFails);
     });
 }
