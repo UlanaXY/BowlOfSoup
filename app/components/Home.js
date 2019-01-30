@@ -21,8 +21,20 @@ export default class Home extends Component<Props> {
     // username: '',
     numberOfParallelDownloads: 10,
     downloadDirectory: '',
-    downloadInProgress: false
+    downloadInProgress: false,
+    numberOfFilesSuccessfullyDownloaded: null,
+    numberOfFilesNotDownloaded: null
   };
+
+  componentDidMount() {
+    ipcRenderer.on('downloadFinished', (event, arg) => {
+      this.setState({
+        downloadInProgress: false,
+        numberOfFilesSuccessfullyDownloaded: arg.successes,
+        numberOfFilesNotDownloaded: arg.fails
+      });
+    });
+  }
 
   onUsernameChange = e =>
     this.setState({
@@ -42,10 +54,10 @@ export default class Home extends Component<Props> {
       properties: ['openDirectory']
     });
 
+    if (downloadDirectory == null) return null;
     // eslint-disable-next-line prefer-destructuring
     selectedPath = downloadDirectory[0];
 
-    console.log(path.basename(selectedPath));
     if (path.basename(selectedPath) !== topDirectoryName) {
       selectedPath = path.resolve(selectedPath, topDirectoryName);
     }
@@ -65,11 +77,15 @@ export default class Home extends Component<Props> {
     const args = {
       username,
       downloadDirectory,
-      parallelDownloads: numberOfParallelDownloads,
-      callback: () => this.setState({ downloadInProgress: false })
+      parallelDownloads: numberOfParallelDownloads
     };
-    ipcRenderer.sendSync('start-downloading', args);
-    this.setState({ downloadInProgress: true });
+
+    ipcRenderer.send('start-downloading', args);
+    this.setState({
+      downloadInProgress: true,
+      numberOfFilesSuccessfullyDownloaded: null,
+      numberOfFilesNotDownloaded: null
+    });
   };
 
   render() {
@@ -77,7 +93,9 @@ export default class Home extends Component<Props> {
       username,
       numberOfParallelDownloads,
       downloadDirectory,
-      downloadInProgress
+      downloadInProgress,
+      numberOfFilesSuccessfullyDownloaded,
+      numberOfFilesNotDownloaded
     } = this.state;
 
     return (
@@ -122,6 +140,19 @@ export default class Home extends Component<Props> {
           </button>
         </div>
         {downloadInProgress && <div>Download in progress...</div>}
+        {(numberOfFilesSuccessfullyDownloaded !== null ||
+          numberOfFilesNotDownloaded !== null) && (
+          <div className={styles.summary}>
+            <div>
+              <span>Files downloaded successfully:&nbsp;</span>
+              <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
+            </div>
+            <div>
+              <span>Files not downloaded due to errors:&nbsp;</span>
+              <span>{numberOfFilesNotDownloaded || '0'}</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

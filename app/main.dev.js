@@ -110,6 +110,10 @@ ipcMain.on('start-downloading', (event, arg) => {
     arg.username,
     arg.downloadDirectory,
     arg.parallelDownloads,
-    arg.callback
+    (successes, fails) =>
+      event.sender.send('downloadFinished', {
+        successes,
+        fails
+      })
   );
 });

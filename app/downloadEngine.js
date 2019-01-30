@@ -20,9 +20,11 @@ const urlListFilePath = path.resolve(
 );
 
 // starting variables
-let pageCounter = 1;
-const allMedia = [];
 let q;
+let pageCounter = 1;
+let allMedia = [];
+let downloadSuccess = 0;
+let downloadFailse = 0;
 
 function setUpWorkingDirectoryStructure() {
   // console.log('saving file with all urls...');
@@ -42,30 +44,21 @@ function writeUrlListFile() {
   console.log('file saved');
 }
 
-// async function downloadFile(task) {
-//   const filePath = path.resolve(mediaDirectory, path.basename(task.url));
-//
-//   // axios image download with response type "stream"
-//   const response = await axios({
-//     method: 'GET',
-//     url: task.url,
-//     responseType: 'stream'
-//   });
-//
-//   // console.log(filePath.toString());
-//   // pipe the result stream into a file on disc
-//   response.data.pipe(fs.createWriteStream(filePath));
-// }
-
 async function downloadFile(task) {
-  download(BrowserWindow.getFocusedWindow(), task.url, {
-    saveAs: false,
-    directory: mediaDirectory
-  })
-    // .then(dl => console.log(dl.getSavePath()))
-    .catch(e => {
-      console.error(e);
-    });
+  return (
+    download(BrowserWindow.getAllWindows()[0], task.url, {
+      saveAs: false,
+      directory: mediaDirectory
+    })
+      // eslint-disable-next-line promise/always-return
+      .then(() => {
+        downloadSuccess += 1;
+      })
+      .catch(e => {
+        downloadFailse += 1;
+        console.error(e);
+      })
+  );
 }
 
 function proceedElement(elem) {
@@ -78,40 +71,41 @@ function proceedElement(elem) {
 }
 
 async function fetchUntilEnd(url) {
+  let respond;
   try {
-    const respond = await axios.get(url, { timeout: 3 * 60 * 1000 });
+    respond = await axios.get(url, { timeout: 3 * 60 * 1000 });
     // const respond = await axios.get('http://stanikus.soup.io/since/258894239');
-
-    // todo what if respond isn't ok
-    if (respond.statusText !== 'OK') {
-      console.error(`Not OK server respond, status: ${respond.status}`);
-      throw Error(`Not OK server respond, status: ${respond.status}`);
-    }
-    const $ = cheerio.load(respond.data);
-
-    $('.imagecontainer img').each((i, elem) => proceedElement(elem));
-    $('video').each((i, elem) => proceedElement(elem));
-
-    const end = $('#new-future').children().length > 0;
-
-    if (end) {
-      console.log(`end of soup, this page is last: ${pageCounter}`);
-      writeUrlListFile();
-    } else {
-      const newUrl = $('#load_more strong a')
-        .prop('href')
-        .split('?')[0];
-
-      pageCounter += 1;
-      console.log(`fetching page ${pageCounter}: ${soupUrl + newUrl}`);
-      // console.log(soupUrl + newUrl);
-      fetchUntilEnd(soupUrl + newUrl);
-    }
   } catch (e) {
     if (e.code === 'ETIMEDOUT') {
       throw Error(`Timeout fetching ${url}`);
     }
-    throw e;
+  }
+  // todo what if respond isn't ok
+  if (respond.statusText !== 'OK') {
+    console.error(`Not OK server respond, status: ${respond.status}`);
+    throw Error(`Not OK server respond, status: ${respond.status}`);
+  }
+  const $ = cheerio.load(respond.data);
+
+  $('.imagecontainer img').each((i, elem) => proceedElement(elem));
+  $('video').each((i, elem) => proceedElement(elem));
+
+  const end = $('#new-future').children().length > 0;
+
+  if (end) {
+    console.log(`end of soup, this page is last: ${pageCounter}`);
+    writeUrlListFile();
+  } else {
+    const newUrl = $('#load_more strong a')
+      .prop('href')
+      .split('?')[0];
+
+    pageCounter += 1;
+    console.log(`fetching page ${pageCounter}: ${soupUrl + newUrl}`);
+    // console.log(soupUrl + newUrl);
+    await fetchUntilEnd(soupUrl + newUrl).catch(e => {
+      throw e;
+    });
   }
 }
 
@@ -119,19 +113,31 @@ export default function startDownloadingContent(
   username,
   downloadDirectory,
   parallelDownloads,
-  callback
+  finishCallback
 ) {
   soupUrl = `http://${username}.soup.io`;
   mediaDirectory = downloadDirectory;
+
+  // reset starting variables
+  pageCounter = 1;
+  allMedia = [];
+  downloadSuccess = 0;
+  downloadFailse = 0;
   q = async.queue(downloadFile, parallelDownloads);
-  q.drain(callback);
+  q.error((e, task) => {
+    console.error('error in taks', task);
+    console.error(e);
+  });
 
   setUpWorkingDirectoryStructure();
   console.log('Fetching home page, page 1');
-  fetchUntilEnd(soupUrl)
-    // .then()
+  fetchUntilEnd(soupUrl, finishCallback)
+    // eslint-disable-next-line promise/always-return
+    .then(() => {
+      finishCallback(downloadSuccess, downloadFailse);
+    })
     .catch(error => {
       console.error(error);
-      callback();
+      finishCallback(downloadSuccess, downloadFailse);
     });
 }
