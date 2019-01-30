@@ -35,14 +35,22 @@ export default class Home extends Component<Props> {
     });
 
   openFolderSelectionDialog = () => {
+    const topDirectoryName = 'BowlOfSoup_downloads';
+    let selectedPath;
+
     const downloadDirectory = remote.dialog.showOpenDialog({
       properties: ['openDirectory']
     });
+
+    // eslint-disable-next-line prefer-destructuring
+    selectedPath = downloadDirectory[0];
+
+    console.log(path.basename(selectedPath));
+    if (path.basename(selectedPath) !== topDirectoryName) {
+      selectedPath = path.resolve(selectedPath, topDirectoryName);
+    }
     this.setState({
-      downloadDirectory: path.resolve(
-        downloadDirectory[0],
-        'BowlOfSoup_downloads'
-      )
+      downloadDirectory: selectedPath
       // downloadDirectory: downloadDirectory[0]
     });
   };
