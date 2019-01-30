@@ -63,7 +63,9 @@ async function downloadFile(task) {
     directory: mediaDirectory
   })
     // .then(dl => console.log(dl.getSavePath()))
-    .catch(console.error);
+    .catch(e => {
+      console.error(e);
+    });
 }
 
 function proceedElement(elem) {
