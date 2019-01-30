@@ -16,9 +16,8 @@ export default class Home extends Component<Props> {
   props: Props;
 
   state = {
-    // username: 'ulanaxy',
-    username: 'stanikus',
-    // username: '',
+    // username: 'stanikus', // small soup 150 files;
+    username: '',
     numberOfParallelDownloads: 10,
     downloadDirectory: '',
     downloadInProgress: false,
@@ -139,7 +138,9 @@ export default class Home extends Component<Props> {
             Start
           </button>
         </div>
-        {downloadInProgress && <div>Download in progress...</div>}
+        {downloadInProgress && (
+          <div className={styles.summary}>Download in progress...</div>
+        )}
         {(numberOfFilesSuccessfullyDownloaded !== null ||
           numberOfFilesNotDownloaded !== null) && (
           <div className={styles.summary}>
