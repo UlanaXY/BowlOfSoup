@@ -1,5 +1,24 @@
 /urlCollections
 /downloadedMedia
+/app/urlCollections
+
+# App packaged
+release
+app/main.prod.js
+app/main.prod.js.map
+app/renderer.prod.js
+app/renderer.prod.js.map
+app/style.css
+app/style.css.map
+dist
+dll
+main.js
+main.js.map
+
+
+
+
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Node template
 # Logs
@@ -33,6 +52,10 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
+# Compiled binary addons (http://nodejs.org/api/addons.html)
+build/Release
+.eslintcache
+
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
@@ -63,6 +86,11 @@ typings/
 
 # next.js build output
 .next
+
+# flow-typed
+flow-typed/npm/*
+!flow-typed/npm/module_vx.x.x.js
+
 ### Windows template
 # Windows thumbnail cache files
 Thumbs.db
