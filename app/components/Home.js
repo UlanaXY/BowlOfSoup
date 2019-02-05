@@ -12,6 +12,12 @@ const parallelDownloadsSettings = {
   max: 50
 };
 
+const initialStatusState = {
+  numberOfFilesSuccessfullyDownloaded: null,
+  numberOfFilesNotDownloaded: null,
+  errorMessage: null
+};
+
 export default class Home extends Component<Props> {
   props: Props;
 
@@ -21,16 +27,31 @@ export default class Home extends Component<Props> {
     numberOfParallelDownloads: 10,
     downloadDirectory: '',
     downloadInProgress: false,
-    numberOfFilesSuccessfullyDownloaded: null,
-    numberOfFilesNotDownloaded: null
+    ...initialStatusState
   };
 
   componentDidMount() {
+    ipcRenderer.on('downloadProgress', (event, arg) => {
+      this.setState({
+        numberOfFilesSuccessfullyDownloaded: arg.successes,
+        numberOfFilesNotDownloaded: arg.fails
+      });
+    });
+
     ipcRenderer.on('downloadFinished', (event, arg) => {
       this.setState({
         downloadInProgress: false,
         numberOfFilesSuccessfullyDownloaded: arg.successes,
         numberOfFilesNotDownloaded: arg.fails
+      });
+    });
+
+    ipcRenderer.on('downloadFailed', (event, arg) => {
+      this.setState({
+        downloadInProgress: false,
+        numberOfFilesSuccessfullyDownloaded: arg.successes,
+        numberOfFilesNotDownloaded: arg.fails,
+        errorMessage: arg.error
       });
     });
   }
@@ -82,9 +103,67 @@ export default class Home extends Component<Props> {
     ipcRenderer.send('start-downloading', args);
     this.setState({
       downloadInProgress: true,
-      numberOfFilesSuccessfullyDownloaded: null,
-      numberOfFilesNotDownloaded: null
+      ...initialStatusState
     });
+  };
+
+  renderMessage = () => {
+    const {
+      downloadInProgress,
+      numberOfFilesSuccessfullyDownloaded,
+      numberOfFilesNotDownloaded,
+      errorMessage
+    } = this.state;
+
+    if (downloadInProgress) {
+      return (
+        <div className={styles.message}>
+          <div>Download in progress...</div>
+          <div>
+            <span>Files downloaded successfully:&nbsp;</span>
+            <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
+          </div>
+          <div>
+            <span>Files not downloaded due to errors:&nbsp;</span>
+            <span>{numberOfFilesNotDownloaded || '0'}</span>
+          </div>
+        </div>
+      );
+    }
+    if (errorMessage !== null) {
+      return (
+        <div className={styles.message}>
+          <div className={styles.errorMessage}>
+            <div>There was an error:</div>
+            <div>{errorMessage}</div>
+          </div>
+          <div>
+            <span>Files downloaded successfully:&nbsp;</span>
+            <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
+          </div>
+          <div>
+            <span>Files not downloaded due to errors:&nbsp;</span>
+            <span>{numberOfFilesNotDownloaded || '0'}</span>
+          </div>
+        </div>
+      );
+    }
+    if (!downloadInProgress && numberOfFilesSuccessfullyDownloaded !== null) {
+      return (
+        <div className={styles.message}>
+          <div>Downloading finished</div>
+          <div>
+            <span>Files downloaded successfully:&nbsp;</span>
+            <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
+          </div>
+          <div>
+            <span>Files not downloaded due to errors:&nbsp;</span>
+            <span>{numberOfFilesNotDownloaded || '0'}</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   render() {
@@ -92,9 +171,7 @@ export default class Home extends Component<Props> {
       username,
       numberOfParallelDownloads,
       downloadDirectory,
-      downloadInProgress,
-      numberOfFilesSuccessfullyDownloaded,
-      numberOfFilesNotDownloaded
+      downloadInProgress
     } = this.state;
 
     return (
@@ -133,27 +210,14 @@ export default class Home extends Component<Props> {
           <button
             type="button"
             onClick={this.onStart}
-            disabled={downloadInProgress || downloadDirectory === ''}
+            disabled={
+              downloadInProgress || downloadDirectory === '' || username === ''
+            }
           >
             Start
           </button>
         </div>
-        {downloadInProgress && (
-          <div className={styles.summary}>Download in progress...</div>
-        )}
-        {(numberOfFilesSuccessfullyDownloaded !== null ||
-          numberOfFilesNotDownloaded !== null) && (
-          <div className={styles.summary}>
-            <div>
-              <span>Files downloaded successfully:&nbsp;</span>
-              <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
-            </div>
-            <div>
-              <span>Files not downloaded due to errors:&nbsp;</span>
-              <span>{numberOfFilesNotDownloaded || '0'}</span>
-            </div>
-          </div>
-        )}
+        {this.renderMessage()}
       </div>
     );
   }

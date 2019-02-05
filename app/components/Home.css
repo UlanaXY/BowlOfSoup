@@ -32,6 +32,11 @@
   margin-right: 1rem;
 }
 
-.summary {
+.message {
   margin-top: 20px;
+}
+
+.errorMessage {
+  font-size: 1.4rem;
+  color: #e73430;
 }

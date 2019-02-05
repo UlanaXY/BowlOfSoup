@@ -2,9 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const async = require('async');
-// const path = require('path');
-const { BrowserWindow } = require('electron');
-const { download } = require('electron-dl');
+const path = require('path');
 
 // last page http://stanikus.soup.io/since/258895020
 // after last page http://stanikus.soup.io/since/258894239?
@@ -20,6 +18,7 @@ let mediaDirectory; // string
 // );
 
 // starting variables
+let startEvent;
 let q;
 let pageCounter = 1;
 let allMedia = [];
@@ -43,20 +42,29 @@ function setUpWorkingDirectoryStructure() {
 // }
 
 async function downloadFile(task) {
-  return (
-    download(BrowserWindow.getAllWindows()[0], task.url, {
-      saveAs: false,
-      directory: mediaDirectory
-    })
-      // eslint-disable-next-line promise/always-return
-      .then(() => {
-        downloadSuccess += 1;
-      })
-      .catch(e => {
-        downloadFails += 1;
-        console.error(e);
-      })
-  );
+  try {
+    const filePath = path.resolve(mediaDirectory, path.basename(task.url));
+
+    // axios image download with response type "stream"
+    const response = await axios({
+      method: 'GET',
+      url: task.url,
+      responseType: 'stream'
+    });
+
+    // console.log(filePath.toString());
+    // pipe the result stream into a file on disc
+    await response.data.pipe(fs.createWriteStream(filePath));
+    downloadSuccess += 1;
+
+    startEvent.sender.send('downloadProgress', {
+      successes: downloadSuccess,
+      fails: downloadFails
+    });
+  } catch (e) {
+    downloadFails += 1;
+    console.error(e);
+  }
 }
 
 function proceedElement(elem) {
@@ -111,31 +119,43 @@ export default function startDownloadingContent(
   username,
   downloadDirectory,
   parallelDownloads,
-  finishCallback
+  event
 ) {
-  soupUrl = `http://${username}.soup.io`;
-  mediaDirectory = downloadDirectory;
+  try {
+    soupUrl = `http://${username}.soup.io`;
+    mediaDirectory = downloadDirectory;
 
-  // reset starting variables
-  pageCounter = 1;
-  allMedia = [];
-  downloadSuccess = 0;
-  downloadFails = 0;
-  q = async.queue(downloadFile, parallelDownloads);
-  q.error((e, task) => {
-    console.error('error in taks', task);
-    console.error(e);
-  });
-
-  setUpWorkingDirectoryStructure();
-  console.log('Fetching home page, page 1');
-  fetchUntilEnd(soupUrl, finishCallback)
-    // eslint-disable-next-line promise/always-return
-    .then(() => {
-      finishCallback(downloadSuccess, downloadFails);
-    })
-    .catch(error => {
-      console.error(error);
-      finishCallback(downloadSuccess, downloadFails);
+    // reset starting variables
+    pageCounter = 1;
+    allMedia = [];
+    downloadSuccess = 0;
+    downloadFails = 0;
+    startEvent = event;
+    q = async.queue(downloadFile, parallelDownloads);
+    q.error((e, task) => {
+      console.error('error in taks', task);
+      console.error(e);
     });
+
+    setUpWorkingDirectoryStructure();
+    console.log('Fetching home page, page 1');
+    fetchUntilEnd(soupUrl)
+      .then(() => {
+        startEvent.sender.send('downloadFinished', {
+          successes: downloadSuccess,
+          fails: downloadFails
+        });
+        return null;
+      })
+      .catch(error => {
+        throw error;
+      });
+  } catch (e) {
+    console.error(e);
+    startEvent.sender.send('downloadFailed', {
+      error: e.message,
+      successes: downloadSuccess,
+      fails: downloadFails
+    });
+  }
 }
