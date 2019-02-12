@@ -52,11 +52,13 @@ const installExtensions = async () => {
  * Add event listeners...
  */
 
+app.on('before-quit', () => {
+  global.sharedObj.shouldHaltDownloading = true;
+});
+
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
-  global.sharedObj.shouldHaltDownloading = true;
-
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -72,8 +74,9 @@ app.on('ready', async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728
+    width: process.env.NODE_ENV === 'development' ? 1200 : 600,
+    height: 620,
+    title: 'BowlOfSoup'
   });
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
@@ -102,9 +105,6 @@ app.on('ready', async () => {
   } else {
     mainWindow.setMenu(null);
   }
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  new AppUpdater();
 });
 
 ipcMain.on('start-downloading', (event, arg) => {

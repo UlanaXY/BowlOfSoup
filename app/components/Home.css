@@ -32,6 +32,21 @@
   margin-right: 1rem;
 }
 
+.inputLabel {
+  margin-bottom: 2px;
+}
+
+.downloadDirectory {
+  max-width: 460px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+}
+
+.choseDirectoryButton {
+  margin-bottom: 3px;
+}
+
 .message {
   margin-top: 20px;
 }
@@ -39,8 +54,4 @@
 .errorMessage {
   font-size: 1.4rem;
   color: #e73430;
-}
-
-.inputLabel {
-  margin-bottom: 2px;
 }

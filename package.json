@@ -60,7 +60,7 @@
   },
   "main": "./app/main.prod.js",
   "build": {
-    "productName": "ElectronReact",
+    "productName": "BowlOfSoup",
     "appId": "org.develar.ElectronReact",
     "files": [
       "app/dist/",

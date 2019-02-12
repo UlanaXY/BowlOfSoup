@@ -43,6 +43,7 @@ function setUpWorkingDirectoryStructure() {
 // }
 
 async function downloadFile(task) {
+  if (global.sharedObj.shouldHaltDownloading) return null;
   try {
     const filePath = path.resolve(mediaDirectory, path.basename(task.url));
 

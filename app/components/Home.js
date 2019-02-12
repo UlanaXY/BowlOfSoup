@@ -120,10 +120,14 @@ export default class Home extends Component<Props> {
           </div>
           <div className={styles.optionBlock}>
             <div className={styles.inputLabel}>Where to save the files?</div>
-            <button type="button" onClick={openFolderSelectionDialog}>
+            <button
+              className={styles.choseDirectoryButton}
+              type="button"
+              onClick={openFolderSelectionDialog}
+            >
               Chose Directory
             </button>
-            <span>{downloadDirectory}</span>
+            <div className={styles.downloadDirectory}>{downloadDirectory}</div>
           </div>
         </div>
 
