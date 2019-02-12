@@ -1,12 +1,26 @@
 # BowlOfSoup
 
-start app:
+BowlOfSoup is a programs that allows to download all images, and videos from user soup.
+
+## Dwownload
+
+## Start Application in production mode
+
+```
+ $ npm run build
+ $ npm run start
+```
+
+## Start Application in development mode
 
 ```
  $ npm run start-main-dev
  $ npm run start-renderer-dev
 ```
 
-builded with:
-electron-react-boilerplate
-https://github.com/electron-react-boilerplate/electron-react-boilerplate
+## Credits
+
+BowlOfSoup is created with:
+[electron-react-boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate).
+
+And inspired by [soupdownloader.js](https://github.com/protofALk/Soup.io-downloader) project.
