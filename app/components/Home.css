@@ -40,3 +40,7 @@
   font-size: 1.4rem;
   color: #e73430;
 }
+
+.inputLabel {
+  margin-bottom: 2px;
+}

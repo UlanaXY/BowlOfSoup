@@ -24,6 +24,7 @@ let pageCounter = 1;
 let allMedia = [];
 let downloadSuccess = 0;
 let downloadFails = 0;
+global.sharedObj = { shouldHaltDownloading: false };
 
 function setUpWorkingDirectoryStructure() {
   if (!fs.existsSync(mediaDirectory)) {
@@ -78,6 +79,8 @@ function proceedElement(elem) {
 
 async function fetchUntilEnd(url) {
   let respond;
+
+  if (global.sharedObj.shouldHaltDownloading) return null;
   try {
     respond = await axios.get(url, { timeout: 3 * 60 * 1000 });
     // const respond = await axios.get('http://stanikus.soup.io/since/258894239');
@@ -130,6 +133,7 @@ export default function startDownloadingContent(
     allMedia = [];
     downloadSuccess = 0;
     downloadFails = 0;
+    global.sharedObj.shouldHaltDownloading = false;
     startEvent = event;
     q = async.queue(downloadFile, parallelDownloads);
     q.error((e, task) => {

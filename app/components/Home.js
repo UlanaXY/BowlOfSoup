@@ -1,111 +1,26 @@
 // @flow
 import React, { Component } from 'react';
-import path from 'path';
-import { remote, ipcRenderer } from 'electron';
-import styles from './Home.css';
 import TextInput from './TextInput';
+import { parallelDownloadsSettings } from '../config';
 
-type Props = {};
+import styles from './Home.css';
 
-const parallelDownloadsSettings = {
-  min: 1,
-  max: 50
-};
-
-const initialStatusState = {
-  numberOfFilesSuccessfullyDownloaded: null,
-  numberOfFilesNotDownloaded: null,
-  errorMessage: null
+type Props = {
+  username: string,
+  numberOfParallelDownloads: number,
+  downloadDirectory: string,
+  downloadInProgress: boolean,
+  numberOfFilesSuccessfullyDownloaded: number,
+  numberOfFilesNotDownloaded: number,
+  errorMessage: string,
+  onUsernameChange: Function,
+  onParallelDownloadsChange: Function,
+  openFolderSelectionDialog: Function,
+  onStart: Function
 };
 
 export default class Home extends Component<Props> {
   props: Props;
-
-  state = {
-    // username: 'stanikus', // small soup 150 files;
-    username: '',
-    numberOfParallelDownloads: 10,
-    downloadDirectory: '',
-    downloadInProgress: false,
-    ...initialStatusState
-  };
-
-  componentDidMount() {
-    ipcRenderer.on('downloadProgress', (event, arg) => {
-      this.setState({
-        numberOfFilesSuccessfullyDownloaded: arg.successes,
-        numberOfFilesNotDownloaded: arg.fails
-      });
-    });
-
-    ipcRenderer.on('downloadFinished', (event, arg) => {
-      this.setState({
-        downloadInProgress: false,
-        numberOfFilesSuccessfullyDownloaded: arg.successes,
-        numberOfFilesNotDownloaded: arg.fails
-      });
-    });
-
-    ipcRenderer.on('downloadFailed', (event, arg) => {
-      this.setState({
-        downloadInProgress: false,
-        numberOfFilesSuccessfullyDownloaded: arg.successes,
-        numberOfFilesNotDownloaded: arg.fails,
-        errorMessage: arg.error
-      });
-    });
-  }
-
-  onUsernameChange = e =>
-    this.setState({
-      username: e.target.value
-    });
-
-  onParallelDownloadsChange = e =>
-    this.setState({
-      numberOfParallelDownloads: e.target.value
-    });
-
-  openFolderSelectionDialog = () => {
-    const topDirectoryName = 'BowlOfSoup_downloads';
-    let selectedPath;
-
-    const downloadDirectory = remote.dialog.showOpenDialog({
-      properties: ['openDirectory']
-    });
-
-    if (downloadDirectory == null) return null;
-    // eslint-disable-next-line prefer-destructuring
-    selectedPath = downloadDirectory[0];
-
-    if (path.basename(selectedPath) !== topDirectoryName) {
-      selectedPath = path.resolve(selectedPath, topDirectoryName);
-    }
-    this.setState({
-      downloadDirectory: selectedPath
-      // downloadDirectory: downloadDirectory[0]
-    });
-  };
-
-  onStart = () => {
-    const {
-      username,
-      numberOfParallelDownloads,
-      downloadDirectory
-    } = this.state;
-
-    const args = {
-      username,
-      downloadDirectory,
-      parallelDownloads: numberOfParallelDownloads
-    };
-
-    ipcRenderer.send('start-downloading', args);
-    this.setState({
-      downloadInProgress: true,
-      ...initialStatusState
-    });
-  };
 
   renderMessage = () => {
     const {
@@ -113,7 +28,7 @@ export default class Home extends Component<Props> {
       numberOfFilesSuccessfullyDownloaded,
       numberOfFilesNotDownloaded,
       errorMessage
-    } = this.state;
+    } = this.props;
 
     if (downloadInProgress) {
       return (
@@ -171,8 +86,12 @@ export default class Home extends Component<Props> {
       username,
       numberOfParallelDownloads,
       downloadDirectory,
-      downloadInProgress
-    } = this.state;
+      downloadInProgress,
+      onUsernameChange,
+      onParallelDownloadsChange,
+      openFolderSelectionDialog,
+      onStart
+    } = this.props;
 
     return (
       <div className={styles.container} data-tid="container">
@@ -180,26 +99,28 @@ export default class Home extends Component<Props> {
         <h3>Save your images and videos from soup.io</h3>
         <div className={styles.settingsContainer}>
           <div className={styles.optionBlock}>
-            <div>Your Username</div>
+            <div className={styles.inputLabel}>Your Username</div>
             <div>
-              <TextInput value={username} onChange={this.onUsernameChange} />
+              <TextInput value={username} onChange={onUsernameChange} />
               <span>.soup.io</span>
             </div>
           </div>
           <div className={styles.optionBlock}>
-            <div>Number of parallel downloads</div>
+            <div className={styles.inputLabel}>
+              Number of parallel downloads
+            </div>
             <input
               type="number"
               name="quantity"
               min={parallelDownloadsSettings.min}
               max={parallelDownloadsSettings.max}
               value={numberOfParallelDownloads}
-              onChange={this.onParallelDownloadsChange}
+              onChange={onParallelDownloadsChange}
             />
           </div>
           <div className={styles.optionBlock}>
-            <div>Where to save the files?</div>
-            <button type="button" onClick={this.openFolderSelectionDialog}>
+            <div className={styles.inputLabel}>Where to save the files?</div>
+            <button type="button" onClick={openFolderSelectionDialog}>
               Chose Directory
             </button>
             <span>{downloadDirectory}</span>
@@ -209,7 +130,7 @@ export default class Home extends Component<Props> {
         <div>
           <button
             type="button"
-            onClick={this.onStart}
+            onClick={onStart}
             disabled={
               downloadInProgress || downloadDirectory === '' || username === ''
             }

@@ -40,3 +40,19 @@ a:hover {
   text-decoration: none;
   cursor: pointer;
 }
+
+input {
+  border: none;
+  border-radius: 2px;
+}
+
+button {
+  border-radius: 2px;
+  border: none;
+  background-color: white;
+  padding: 3px 10px;
+}
+
+button[disabled] {
+  background-color: #d7d7d7;
+}
