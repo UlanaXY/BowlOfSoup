@@ -4,6 +4,9 @@ BowlOfSoup is a programs that allows to download all images, and videos from use
 
 ## Dwownload
 
+you can download .zip file from [here](https://github.com/UlanaXY/BowlOfSoup/releases/download/v1.0.0/BowlOfSoup.zip)
+or from release page [here](https://github.com/UlanaXY/BowlOfSoup/releases).
+
 ## Start Application in production mode
 
 ```
