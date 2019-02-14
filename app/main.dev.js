@@ -48,12 +48,16 @@ const installExtensions = async () => {
   ).catch(console.log);
 };
 
+function haltDownloading() {
+  global.sharedObj.shouldHaltDownloading = true;
+}
+
 /**
  * Add event listeners...
  */
 
 app.on('before-quit', () => {
-  global.sharedObj.shouldHaltDownloading = true;
+  haltDownloading();
 });
 
 app.on('window-all-closed', () => {
@@ -115,3 +119,5 @@ ipcMain.on('start-downloading', (event, arg) => {
     event
   );
 });
+
+ipcMain.on('halt-downloading', haltDownloading);

@@ -47,6 +47,10 @@
   margin-bottom: 3px;
 }
 
+.buttonsRow button {
+  margin: 0 3px;
+}
+
 .message {
   margin-top: 20px;
 }

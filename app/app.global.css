@@ -44,6 +44,7 @@ a:hover {
 input {
   border: none;
   border-radius: 2px;
+  padding: 0.1rem 0.3rem;
 }
 
 button {
@@ -51,8 +52,10 @@ button {
   border: none;
   background-color: white;
   padding: 3px 10px;
+  cursor: pointer;
 }
 
 button[disabled] {
   background-color: #d7d7d7;
+  cursor: default;
 }

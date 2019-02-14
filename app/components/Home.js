@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import TextInput from './TextInput';
 import { parallelDownloadsSettings } from '../config';
+import statuses from '../constants/statusEnum';
 
 import styles from './Home.css';
 
@@ -9,14 +10,15 @@ type Props = {
   username: string,
   numberOfParallelDownloads: number,
   downloadDirectory: string,
-  downloadInProgress: boolean,
+  currentStatus: string,
   numberOfFilesSuccessfullyDownloaded: number,
   numberOfFilesNotDownloaded: number,
   errorMessage: string,
   onUsernameChange: Function,
   onParallelDownloadsChange: Function,
   openFolderSelectionDialog: Function,
-  onStart: Function
+  onStart: Function,
+  onHalt: Function
 };
 
 export default class Home extends Component<Props> {
@@ -24,28 +26,15 @@ export default class Home extends Component<Props> {
 
   renderMessage = () => {
     const {
-      downloadInProgress,
+      currentStatus,
       numberOfFilesSuccessfullyDownloaded,
       numberOfFilesNotDownloaded,
       errorMessage
     } = this.props;
 
-    if (downloadInProgress) {
-      return (
-        <div className={styles.message}>
-          <div>Download in progress...</div>
-          <div>
-            <span>Files downloaded successfully:&nbsp;</span>
-            <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
-          </div>
-          <div>
-            <span>Files not downloaded due to errors:&nbsp;</span>
-            <span>{numberOfFilesNotDownloaded || '0'}</span>
-          </div>
-        </div>
-      );
-    }
-    if (errorMessage !== null) {
+    if (currentStatus === statuses.IDLE) return null;
+
+    if (currentStatus === statuses.FAILED) {
       return (
         <div className={styles.message}>
           <div className={styles.errorMessage}>
@@ -63,22 +52,31 @@ export default class Home extends Component<Props> {
         </div>
       );
     }
-    if (!downloadInProgress && numberOfFilesSuccessfullyDownloaded !== null) {
-      return (
-        <div className={styles.message}>
-          <div>Downloading finished</div>
-          <div>
-            <span>Files downloaded successfully:&nbsp;</span>
-            <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
-          </div>
-          <div>
-            <span>Files not downloaded due to errors:&nbsp;</span>
-            <span>{numberOfFilesNotDownloaded || '0'}</span>
-          </div>
-        </div>
-      );
+
+    let message = 'Unknown status';
+    if (currentStatus === statuses.INPROGRESS) {
+      message = 'Download in progress...';
     }
-    return null;
+    if (currentStatus === statuses.FINISHED) {
+      message = 'Downloading finished';
+    }
+    if (currentStatus === statuses.HALTED) {
+      message = 'Downloading halted';
+    }
+
+    return (
+      <div className={styles.message}>
+        <div>{message}</div>
+        <div>
+          <span>Files downloaded successfully:&nbsp;</span>
+          <span>{numberOfFilesSuccessfullyDownloaded || '0'}</span>
+        </div>
+        <div>
+          <span>Files not downloaded due to errors:&nbsp;</span>
+          <span>{numberOfFilesNotDownloaded || '0'}</span>
+        </div>
+      </div>
+    );
   };
 
   render() {
@@ -86,11 +84,12 @@ export default class Home extends Component<Props> {
       username,
       numberOfParallelDownloads,
       downloadDirectory,
-      downloadInProgress,
+      currentStatus,
       onUsernameChange,
       onParallelDownloadsChange,
       openFolderSelectionDialog,
-      onStart
+      onStart,
+      onHalt
     } = this.props;
 
     return (
@@ -131,15 +130,25 @@ export default class Home extends Component<Props> {
           </div>
         </div>
 
-        <div>
+        <div className={styles.buttonsRow}>
           <button
             type="button"
             onClick={onStart}
             disabled={
-              downloadInProgress || downloadDirectory === '' || username === ''
+              currentStatus === statuses.INPROGRESS ||
+              downloadDirectory === '' ||
+              username === ''
             }
           >
             Start
+          </button>
+          <button
+            className=""
+            type="button"
+            onClick={onHalt}
+            disabled={currentStatus !== statuses.INPROGRESS}
+          >
+            Cancel
           </button>
         </div>
         {this.renderMessage()}
