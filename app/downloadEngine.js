@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const async = require('async');
 const path = require('path');
-// last page http://stanikus.soup.io/since/258895020
+// last page       http://stanikus.soup.io/since/258895020
 // after last page http://stanikus.soup.io/since/258894239?
 
 // config
@@ -71,12 +71,14 @@ async function downloadFile(task) {
 }
 
 function proceedElement(elem) {
-  // console.log(elem);
   const url = elem.attribs.src;
-  console.log(url);
-  allMedia.push(url);
+  // strip size suffix from image src to download the full-size image
+  const re = /_\d{3}\./;
+  const fUrl = url.replace(re, '.');
+  console.log(fUrl);
+  allMedia.push(fUrl);
   // push a new line into the queue to be processed
-  q.push({ url });
+  q.push({ url: fUrl });
 }
 
 async function fetchUntilEnd(url) {
