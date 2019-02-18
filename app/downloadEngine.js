@@ -71,14 +71,15 @@ async function downloadFile(task) {
 }
 
 function proceedElement(elem) {
-  const url = elem.attribs.src;
+  const rawUrl = elem.attribs.src;
   // strip size suffix from image src to download the full-size image
-  const re = /_\d{3}\./;
-  const fUrl = url.replace(re, '.');
-  console.log(fUrl);
-  allMedia.push(fUrl);
+  // ex. http://[soupurl]/9596_1394_500.jpeg => http://[soupurl]/9596_1394.jpeg
+  const reToRemoveTrailing500 = /_\d{3}\./;
+  const fileUrl = rawUrl.replace(reToRemoveTrailing500, '.');
+  console.log(fileUrl);
+  allMedia.push(fileUrl);
   // push a new line into the queue to be processed
-  q.push({ url: fUrl });
+  q.push({ url: fileUrl });
 }
 
 async function fetchUntilEnd(url) {
